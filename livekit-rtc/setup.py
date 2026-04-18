@@ -25,9 +25,11 @@ compile-time values.
 
 import os
 import platform
+import subprocess
 import sys
 
 import setuptools  # type: ignore
+from setuptools.command.build_py import build_py as _build_py  # type: ignore
 from wheel.bdist_wheel import bdist_wheel as _bdist_wheel  # type: ignore
 
 
@@ -70,8 +72,55 @@ class bdist_wheel(_bdist_wheel):
         _bdist_wheel.finalize_options(self)
 
 
+class build_py(_build_py):
+    """Ensure the prebuilt FFI native library is in livekit/rtc/resources
+    before setuptools gathers package_data.
+
+    Upstream relies on cibuildwheel's ``before-build`` hook to invoke
+    ``rust-sdks/download_ffi.py``. That only runs in the cibuildwheel
+    flow. When installing from source (e.g. ``pip install .`` or
+    ``uv add git+...#subdirectory=livekit-rtc``), no one invokes
+    download_ffi, so the wheel ships without the FFI and imports fail
+    at runtime.
+
+    This hook closes that gap: if no platform-native FFI library is
+    already in ``livekit/rtc/resources``, download it before packaging.
+    Respects ``LIVEKIT_FFI_REPO_URL`` and ``LIVEKIT_FFI_VERSION`` env
+    vars handled by download_ffi.py.
+    """
+
+    _ffi_extensions = (".so", ".dylib", ".dll")
+
+    def run(self):  # type: ignore[override]
+        here = os.path.abspath(os.path.dirname(__file__))
+        resources = os.path.join(here, "livekit", "rtc", "resources")
+        needs_download = True
+        if os.path.isdir(resources):
+            for name in os.listdir(resources):
+                if name.endswith(self._ffi_extensions):
+                    needs_download = False
+                    break
+        if needs_download:
+            os.makedirs(resources, exist_ok=True)
+            script = os.path.join(here, "rust-sdks", "download_ffi.py")
+            if os.path.exists(script):
+                print(
+                    f"[livekit-rtc setup] FFI missing; downloading via {script}",
+                    file=sys.stderr,
+                )
+                subprocess.check_call([sys.executable, script, "--output", resources])
+            else:
+                raise RuntimeError(
+                    "livekit-rtc: no FFI binary in livekit/rtc/resources and "
+                    f"rust-sdks/download_ffi.py not found at {script!r}. "
+                    "Did you clone with --recurse-submodules?"
+                )
+        super().run()
+
+
 setuptools.setup(
     cmdclass={
         "bdist_wheel": bdist_wheel,
+        "build_py": build_py,
     },
 )
