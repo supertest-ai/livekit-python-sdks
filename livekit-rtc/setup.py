@@ -36,12 +36,15 @@ from wheel.bdist_wheel import bdist_wheel as _bdist_wheel  # type: ignore
 def get_platform_tag():
     """Get the wheel platform tag for the current/target platform."""
     if sys.platform == "darwin":
-        # Get deployment target from environment (set by cibuildwheel) or fall back
+        # Get deployment target from environment (set by cibuildwheel) or fall
+        # back. The fallback to platform.mac_ver() yields the host OS version
+        # (e.g. "26.3" on macOS 26.3), which Python wheel tag matching rejects
+        # when the installed Python was built against an older minimum target.
+        # Pin to a conservative default when not explicitly overridden so
+        # source-installs via ``uv add git+...`` produce a consumable wheel.
         target = os.environ.get("MACOSX_DEPLOYMENT_TARGET")
         if not target:
-            target = platform.mac_ver()[0]
-            parts = target.split(".")
-            target = f"{parts[0]}.{parts[1] if len(parts) > 1 else '0'}"
+            target = "11.0" if platform.machine() == "arm64" else "10.15"
 
         version_tag = target.replace(".", "_")
 
