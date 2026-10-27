@@ -99,7 +99,7 @@ class AudioSource:
         _ = FfiClient.instance.request(req)
         self._release_waiter()
 
-    async def capture_frame(self, frame: AudioFrame) -> None:
+    async def capture_frame(self, frame: AudioFrame, *, tag: bytes | None = None) -> None:
         """
         Captures an `AudioFrame` and queues it for playback.
 
@@ -111,6 +111,11 @@ class AudioSource:
 
         Args:
             frame (AudioFrame): The audio frame to capture and queue.
+            tag (bytes | None): Up to 244 bytes appended to the encoded frame
+                that holds this frame's first sample, together with that
+                sample's offset into the encoded frame. Requires publishing
+                the track with ``FrameMetadataFeature.FMF_USER_DATA``; a
+                receiver must strip the trailer before decoding.
 
         Raises:
             Exception: If there is an error during frame capture.
@@ -135,6 +140,8 @@ class AudioSource:
         req = proto_ffi.FfiRequest()
         req.capture_audio_frame.source_handle = self._ffi_handle.handle
         req.capture_audio_frame.buffer.CopyFrom(frame._proto_info())
+        if tag:
+            req.capture_audio_frame.tag = tag
 
         queue = FfiClient.instance.queue.subscribe(loop=self._loop)
         try:
