@@ -111,25 +111,9 @@ class AudioSource:
 
         Args:
             frame (AudioFrame): The audio frame to capture and queue.
-            opus_padding (bytes | None): Bytes written verbatim as the Opus padding
-                (RFC 6716, section 3.2.5) of the encoded frame that holds this
-                frame's first sample. Opus decoders skip padding, so the frame decodes
-                exactly as it would without it. The bytes should be a valid extension
-                sequence per draft-ietf-mlcodec-opus-extension, e.g. ``b"\\xf0"``
-                (experimental extension ID 120, extending to the end of the padding)
-                followed by the data.
-
-                The capture fails if the bytes are empty, or if the source's track is
-                not published or uses end-to-end encryption. After that, the padding is
-                dropped with a warning in the log if the encoded frame is not Opus (or
-                RED carrying Opus) or already has padding, and without one if
-                :meth:`clear_queue` discards the frame. If several frames' padding falls
-                into one encoded frame, the first one's is written. With RED, only the
-                primary encoding carries the padding.
-
-                The size is not limited. The encoded frame and its padding are sent as
-                one RTP packet, and packets much larger than about 1200 bytes risk being
-                dropped by the network or the SFU.
+            opus_padding (bytes | None): Bytes written verbatim as the Opus padding of
+                the encoded frame holding this frame's first sample. Their size is not
+                limited, but packets much larger than ~1200 bytes may be dropped.
 
         Raises:
             Exception: If there is an error during frame capture.
