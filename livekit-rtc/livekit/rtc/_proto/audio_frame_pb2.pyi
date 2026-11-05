@@ -361,10 +361,8 @@ class CaptureAudioFrameRequest(google.protobuf.message.Message):
     source_handle: builtins.int
     request_async_id: builtins.int
     opus_padding: builtins.bytes
-    """Written verbatim as the Opus padding (RFC 6716, section 3.2.5) of the
-    encoded frame holding the buffer's first sample; see
-    NativeAudioSource::capture_frame_with_opus_padding. The capture fails if
-    it is empty or the source's track is not published.
+    """Written verbatim as the Opus padding of the encoded frame holding the
+    buffer's first sample.
     """
     @property
     def buffer(self) -> global___AudioFrameBufferInfo: ...
