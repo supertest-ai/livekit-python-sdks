@@ -99,7 +99,7 @@ class AudioSource:
         _ = FfiClient.instance.request(req)
         self._release_waiter()
 
-    async def capture_frame(self, frame: AudioFrame) -> None:
+    async def capture_frame(self, frame: AudioFrame, *, opus_padding: bytes | None = None) -> None:
         """
         Captures an `AudioFrame` and queues it for playback.
 
@@ -111,6 +111,9 @@ class AudioSource:
 
         Args:
             frame (AudioFrame): The audio frame to capture and queue.
+            opus_padding (bytes | None): Bytes written verbatim as the Opus padding of
+                the encoded frame holding this frame's first sample. Their size is not
+                limited, but packets much larger than ~1200 bytes may be dropped.
 
         Raises:
             Exception: If there is an error during frame capture.
@@ -135,6 +138,8 @@ class AudioSource:
         req = proto_ffi.FfiRequest()
         req.capture_audio_frame.source_handle = self._ffi_handle.handle
         req.capture_audio_frame.buffer.CopyFrom(frame._proto_info())
+        if opus_padding is not None:
+            req.capture_audio_frame.opus_padding = opus_padding
 
         # The async_id is only known once the request returns; until then every capture
         # callback is let through, and wait_for drops the ones of other captures.
