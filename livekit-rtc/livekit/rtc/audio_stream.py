@@ -17,7 +17,7 @@ from __future__ import annotations
 import asyncio
 import json
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Optional
+from typing import Any, AsyncIterator, Optional, Sequence
 
 from ._ffi_client import FfiClient, FfiHandle
 from ._proto import audio_frame_pb2 as proto_audio_frame
@@ -37,9 +37,13 @@ class AudioFrameEvent:
 
     Attributes:
         frame (AudioFrame): The received audio frame.
+        opus_padding (Sequence[bytes]): The Opus padding of each received packet
+            whose first sample falls in the frame, in order and byte for byte. A
+            tuple; empty on E2EE tracks.
     """
 
     frame: AudioFrame
+    opus_padding: Sequence[bytes] = ()
 
 
 @dataclass
@@ -316,7 +320,7 @@ class AudioStream:
                             "Frame processing failed, passing through original frame",
                             exc_info=True,
                         )
-                event = AudioFrameEvent(frame)
+                event = AudioFrameEvent(frame, tuple(audio_event.frame_received.opus_padding))
                 self._queue.put(event)
             elif audio_event.HasField("eos"):
                 self._queue.put(None)
