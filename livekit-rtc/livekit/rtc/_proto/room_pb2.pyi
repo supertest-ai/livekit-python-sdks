@@ -1289,6 +1289,7 @@ class TrackPublishOptions(google.protobuf.message.Message):
     SCALABILITY_MODE_FIELD_NUMBER: builtins.int
     VIDEO_ENCODER_FIELD_NUMBER: builtins.int
     DEGRADATION_PREFERENCE_FIELD_NUMBER: builtins.int
+    OPUS_PADDING_FIELD_NUMBER: builtins.int
     video_codec: video_frame_pb2.VideoCodec.ValueType
     dtx: builtins.bool
     red: builtins.bool
@@ -1306,6 +1307,10 @@ class TrackPublishOptions(google.protobuf.message.Message):
     degradation_preference: global___DegradationPreference.ValueType
     """Controls how the encoder trades off between resolution and framerate
     when bandwidth is constrained. Default is MAINTAIN_RESOLUTION.
+    """
+    opus_padding: builtins.bool
+    """Write the Opus padding given to CaptureAudioFrameRequest into this audio
+    track's encoded frames (default: false).
     """
     @property
     def video_encoding(self) -> global___VideoEncoding:
@@ -1331,9 +1336,10 @@ class TrackPublishOptions(google.protobuf.message.Message):
         scalability_mode: builtins.str | None = ...,
         video_encoder: global___VideoEncoderBackend.ValueType | None = ...,
         degradation_preference: global___DegradationPreference.ValueType | None = ...,
+        opus_padding: builtins.bool | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["audio_encoding", b"audio_encoding", "degradation_preference", b"degradation_preference", "dtx", b"dtx", "preconnect_buffer", b"preconnect_buffer", "red", b"red", "scalability_mode", b"scalability_mode", "simulcast", b"simulcast", "source", b"source", "stream", b"stream", "video_codec", b"video_codec", "video_encoder", b"video_encoder", "video_encoding", b"video_encoding"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["audio_encoding", b"audio_encoding", "degradation_preference", b"degradation_preference", "dtx", b"dtx", "frame_metadata_features", b"frame_metadata_features", "preconnect_buffer", b"preconnect_buffer", "red", b"red", "scalability_mode", b"scalability_mode", "simulcast", b"simulcast", "source", b"source", "stream", b"stream", "video_codec", b"video_codec", "video_encoder", b"video_encoder", "video_encoding", b"video_encoding"]) -> None: ...
+    def HasField(self, field_name: typing.Literal["audio_encoding", b"audio_encoding", "degradation_preference", b"degradation_preference", "dtx", b"dtx", "opus_padding", b"opus_padding", "preconnect_buffer", b"preconnect_buffer", "red", b"red", "scalability_mode", b"scalability_mode", "simulcast", b"simulcast", "source", b"source", "stream", b"stream", "video_codec", b"video_codec", "video_encoder", b"video_encoder", "video_encoding", b"video_encoding"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["audio_encoding", b"audio_encoding", "degradation_preference", b"degradation_preference", "dtx", b"dtx", "frame_metadata_features", b"frame_metadata_features", "opus_padding", b"opus_padding", "preconnect_buffer", b"preconnect_buffer", "red", b"red", "scalability_mode", b"scalability_mode", "simulcast", b"simulcast", "source", b"source", "stream", b"stream", "video_codec", b"video_codec", "video_encoder", b"video_encoder", "video_encoding", b"video_encoding"]) -> None: ...
 
 global___TrackPublishOptions = TrackPublishOptions
 
@@ -1399,13 +1405,10 @@ class RoomDataStreamOptions(google.protobuf.message.Message):
     receiving side. Unset falls back to the SDK default.
     """
     use_legacy_client_implementation: builtins.bool
-    """Temporary migration aid for SDKs that still implement data streams in
-    their own client-side code on top of the FFI instead of using the FFI
-    data stream API. When true, this client does not advertise data streams
-    v2 support: ClientInfo.client_protocol is capped at 1 (DATA_STREAM_RPC),
-    so remote clients will not use v2-only behavior toward this client.
-    Defaults to false (v2 advertised). Will be removed once all FFI
-    consumers migrate.
+    """Deprecated: no client SDK uses this anymore, and it is ignored. It was a
+    temporary migration aid for SDKs that implemented data streams in their
+    own client-side code on top of the FFI; data streams v2 support is now
+    always advertised. Kept only so the field number is not reused.
     """
     def __init__(
         self,
@@ -1433,6 +1436,7 @@ class RoomOptions(google.protobuf.message.Message):
     CONNECT_TIMEOUT_MS_FIELD_NUMBER: builtins.int
     DATA_STREAM_FIELD_NUMBER: builtins.int
     OTHER_SDKS_FIELD_NUMBER: builtins.int
+    RECEIVE_OPUS_PADDING_FIELD_NUMBER: builtins.int
     auto_subscribe: builtins.bool
     adaptive_stream: builtins.bool
     dynacast: builtins.bool
@@ -1444,6 +1448,10 @@ class RoomOptions(google.protobuf.message.Message):
     other_sdks: builtins.str
     """Comma separated list of additional LiveKit SDKs layered on top of this one, with versions,
     e.g. "components-js:1.2.3,track-processors-js:1.2.3". Forwarded to ClientInfo.other_sdks.
+    """
+    receive_opus_padding: builtins.bool
+    """Read the Opus padding of subscribed audio tracks into
+    AudioFrameReceived.opus_padding (default: false).
     """
     @property
     def e2ee(self) -> e2ee_pb2.E2eeOptions: ...
@@ -1471,9 +1479,10 @@ class RoomOptions(google.protobuf.message.Message):
         connect_timeout_ms: builtins.int | None = ...,
         data_stream: global___RoomDataStreamOptions | None = ...,
         other_sdks: builtins.str | None = ...,
+        receive_opus_padding: builtins.bool | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["adaptive_stream", b"adaptive_stream", "auto_subscribe", b"auto_subscribe", "connect_timeout_ms", b"connect_timeout_ms", "data_stream", b"data_stream", "dynacast", b"dynacast", "e2ee", b"e2ee", "encryption", b"encryption", "join_retries", b"join_retries", "other_sdks", b"other_sdks", "rtc_config", b"rtc_config", "single_peer_connection", b"single_peer_connection"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["adaptive_stream", b"adaptive_stream", "auto_subscribe", b"auto_subscribe", "connect_timeout_ms", b"connect_timeout_ms", "data_stream", b"data_stream", "dynacast", b"dynacast", "e2ee", b"e2ee", "encryption", b"encryption", "join_retries", b"join_retries", "other_sdks", b"other_sdks", "rtc_config", b"rtc_config", "single_peer_connection", b"single_peer_connection"]) -> None: ...
+    def HasField(self, field_name: typing.Literal["adaptive_stream", b"adaptive_stream", "auto_subscribe", b"auto_subscribe", "connect_timeout_ms", b"connect_timeout_ms", "data_stream", b"data_stream", "dynacast", b"dynacast", "e2ee", b"e2ee", "encryption", b"encryption", "join_retries", b"join_retries", "other_sdks", b"other_sdks", "receive_opus_padding", b"receive_opus_padding", "rtc_config", b"rtc_config", "single_peer_connection", b"single_peer_connection"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["adaptive_stream", b"adaptive_stream", "auto_subscribe", b"auto_subscribe", "connect_timeout_ms", b"connect_timeout_ms", "data_stream", b"data_stream", "dynacast", b"dynacast", "e2ee", b"e2ee", "encryption", b"encryption", "join_retries", b"join_retries", "other_sdks", b"other_sdks", "receive_opus_padding", b"receive_opus_padding", "rtc_config", b"rtc_config", "single_peer_connection", b"single_peer_connection"]) -> None: ...
 
 global___RoomOptions = RoomOptions
 

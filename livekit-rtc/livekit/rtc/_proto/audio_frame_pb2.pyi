@@ -357,8 +357,14 @@ class CaptureAudioFrameRequest(google.protobuf.message.Message):
     SOURCE_HANDLE_FIELD_NUMBER: builtins.int
     BUFFER_FIELD_NUMBER: builtins.int
     REQUEST_ASYNC_ID_FIELD_NUMBER: builtins.int
+    OPUS_PADDING_FIELD_NUMBER: builtins.int
     source_handle: builtins.int
     request_async_id: builtins.int
+    opus_padding: builtins.bytes
+    """Written verbatim as the Opus padding of the encoded frame holding the
+    buffer's first sample, if the track was published with opus_padding;
+    dropped while no sender carries it.
+    """
     @property
     def buffer(self) -> global___AudioFrameBufferInfo: ...
     def __init__(
@@ -367,9 +373,10 @@ class CaptureAudioFrameRequest(google.protobuf.message.Message):
         source_handle: builtins.int | None = ...,
         buffer: global___AudioFrameBufferInfo | None = ...,
         request_async_id: builtins.int | None = ...,
+        opus_padding: builtins.bytes | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["buffer", b"buffer", "request_async_id", b"request_async_id", "source_handle", b"source_handle"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["buffer", b"buffer", "request_async_id", b"request_async_id", "source_handle", b"source_handle"]) -> None: ...
+    def HasField(self, field_name: typing.Literal["buffer", b"buffer", "opus_padding", b"opus_padding", "request_async_id", b"request_async_id", "source_handle", b"source_handle"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["buffer", b"buffer", "opus_padding", b"opus_padding", "request_async_id", b"request_async_id", "source_handle", b"source_handle"]) -> None: ...
 
 global___CaptureAudioFrameRequest = CaptureAudioFrameRequest
 
@@ -942,15 +949,24 @@ class AudioFrameReceived(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
     FRAME_FIELD_NUMBER: builtins.int
+    OPUS_PADDING_FIELD_NUMBER: builtins.int
     @property
     def frame(self) -> global___OwnedAudioFrameBuffer: ...
+    @property
+    def opus_padding(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.bytes]:
+        """The Opus padding of each received packet whose first sample is in the
+        frame, in order and byte for byte. Empty unless the room was created
+        with receive_opus_padding.
+        """
+
     def __init__(
         self,
         *,
         frame: global___OwnedAudioFrameBuffer | None = ...,
+        opus_padding: collections.abc.Iterable[builtins.bytes] | None = ...,
     ) -> None: ...
     def HasField(self, field_name: typing.Literal["frame", b"frame"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["frame", b"frame"]) -> None: ...
+    def ClearField(self, field_name: typing.Literal["frame", b"frame", "opus_padding", b"opus_padding"]) -> None: ...
 
 global___AudioFrameReceived = AudioFrameReceived
 

@@ -132,6 +132,9 @@ class RoomOptions:
     """Use a single peer connection for both publish and subscribe. When None, uses the default (true)."""
     data_stream: DataStreamOptions | None = None
     """Options for incoming data streams. When None, uses the FFI defaults."""
+    receive_opus_padding: bool = False
+    """Read the Opus padding of subscribed audio tracks into
+    `AudioFrameEvent.opus_padding`."""
 
 
 @dataclass
@@ -494,6 +497,7 @@ class Room(EventEmitter[EventTypes]):
         # options
         req.connect.options.auto_subscribe = options.auto_subscribe
         req.connect.options.dynacast = options.dynacast
+        req.connect.options.receive_opus_padding = options.receive_opus_padding
 
         if (
             options.data_stream is not None
