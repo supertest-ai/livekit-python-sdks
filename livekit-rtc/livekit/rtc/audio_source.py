@@ -114,6 +114,10 @@ class AudioSource:
             opus_padding (bytes | None): Bytes written verbatim as the Opus padding of
                 the encoded frame holding this frame's first sample. Their size is not
                 limited, but packets much larger than ~1200 bytes may be dropped.
+                The padding is best-effort: it is dropped, with a warning, while no
+                sender carries it (before publishing, during a full reconnect, or on
+                a track using end-to-end encryption), and with audio the subscriber
+                conceals.
 
         Raises:
             Exception: If there is an error during frame capture.
