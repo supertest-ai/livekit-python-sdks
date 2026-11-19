@@ -112,8 +112,10 @@ class AudioSource:
         Args:
             frame (AudioFrame): The audio frame to capture and queue.
             opus_padding (bytes | None): Bytes written verbatim as the Opus padding of
-                the encoded frame holding this frame's first sample. Their size is not
-                limited, but packets much larger than ~1200 bytes may be dropped.
+                the encoded frame holding this frame's first sample, if the track was
+                published with `opus_padding=True`. Best-effort: dropped while no sender
+                carries it, and with audio the subscriber conceals. Packets much larger
+                than ~1200 bytes may be dropped.
 
         Raises:
             Exception: If there is an error during frame capture.
