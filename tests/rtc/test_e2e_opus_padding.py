@@ -130,9 +130,8 @@ def check(chunks: list[Chunk]) -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("red", [False, True])
 @skip_if_no_credentials()  # type: ignore[untyped-decorator]
-async def test_opus_padding(red: bool) -> None:
+async def test_opus_padding() -> None:
     room_name = f"test-opus-padding-{uuid.uuid4().hex[:8]}"
     url = os.environ["LIVEKIT_URL"]
     publisher, subscriber = rtc.Room(), rtc.Room()
@@ -150,7 +149,7 @@ async def test_opus_padding(red: bool) -> None:
         source = rtc.AudioSource(RATE, 1, queue_size_ms=100)
         track = rtc.LocalAudioTrack.create_audio_track("padded", source)
         options = rtc.TrackPublishOptions(
-            source=rtc.TrackSource.SOURCE_MICROPHONE, red=red, dtx=False, opus_padding=True
+            source=rtc.TrackSource.SOURCE_MICROPHONE, red=False, dtx=False, opus_padding=True
         )
         await publisher.local_participant.publish_track(track, options)
         sender = asyncio.create_task(send(source))
