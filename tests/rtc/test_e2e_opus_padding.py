@@ -31,6 +31,12 @@ STARTUP_CHUNKS = 7 * PERIOD
 # the jitter buffer stretching audio.
 MAX_ONSET_DELAY = 40 * CHUNK // 10
 LOUD = 4000
+# Chunks between samples of the receiver's stats.
+STATS_CHUNKS = 10
+
+# A received chunk: its samples, its paddings, and how many packets the
+# receiver had discarded for arriving too late.
+Chunk = tuple[np.ndarray, tuple[bytes, ...], int]
 
 
 def skip_if_no_credentials() -> Any:
@@ -71,31 +77,57 @@ async def send(source: rtc.AudioSource) -> None:
         i += 1
 
 
-async def receive(track: rtc.Track) -> list[tuple[np.ndarray, tuple[bytes, ...]]]:
+async def packets_discarded(track: rtc.Track) -> int | None:
+    """None until the receiver has stats."""
+    for stats in await track.get_stats():
+        if stats.WhichOneof("stats") == "inbound_rtp":
+            return int(stats.inbound_rtp.inbound.packets_discarded)
+    return None
+
+
+async def receive(track: rtc.Track) -> list[Chunk]:
     """Receives the bursts, plus slack for subscribing and the jitter buffer."""
-    chunks = []
+    chunks: list[Chunk] = []
+    discarded = 0
     stream = rtc.AudioStream.from_track(track=track, sample_rate=RATE, num_channels=1)
     async for event in stream:
         samples = np.frombuffer(event.frame.data, dtype=np.int16).copy()
         assert len(samples) == CHUNK, "expected 10 ms frames"
-        chunks.append((samples, tuple(event.opus_padding)))
+        if len(chunks) % STATS_CHUNKS == 0:
+            discarded = await packets_discarded(track) or discarded
+        chunks.append((samples, tuple(event.opus_padding), discarded))
         if len(chunks) >= CHUNKS + 200:
             break
     await stream.aclose()
     return chunks
 
 
-def check(chunks: list[tuple[np.ndarray, tuple[bytes, ...]]]) -> None:
+def discarded_near(chunks: list[Chunk], delivered: dict[int, int], i: int) -> bool:
+    """Whether the receiver discarded a late packet within 200 ms of where the
+    padding of chunk `i` was due."""
+    earlier = [j for j in delivered if j < i]
+    if not earlier:
+        return False
+    j = max(earlier)
+    due = delivered[j] // CHUNK + (i - j)
+    window = 2 * STATS_CHUNKS
+    before = chunks[min(max(due - window, 0), len(chunks) - 1)][2]
+    after = chunks[min(due + window, len(chunks) - 1)][2]
+    return after > before
+
+
+def check(chunks: list[Chunk]) -> None:
     """Checks that every padding arrived once, in order, unchanged, just before
-    its burst's onset, and that only startup padding is missing."""
+    its burst's onset, and that only startup padding, or padding the receiver
+    discarded with a late packet, is missing."""
     # Where a burst's audio starts: a loud sample after 20 ms without one.
-    samples = np.concatenate([s for s, _ in chunks]).astype(np.int32)
+    samples = np.concatenate([s for s, _, _ in chunks]).astype(np.int32)
     loud = np.flatnonzero(np.abs(samples) > LOUD)
     onsets = loud[np.diff(loud, prepend=-(10**9)) > 2 * CHUNK]
 
     delivered = {}
     last = -1
-    for c, (_, paddings) in enumerate(chunks):
+    for c, (_, paddings, _) in enumerate(chunks):
         for p in paddings:
             assert len(p) == 5 and p[0] == 0xF0, f"padding {p.hex()} was never sent"
             i = int.from_bytes(p[1:], "big")
@@ -105,7 +137,13 @@ def check(chunks: list[tuple[np.ndarray, tuple[bytes, ...]]]) -> None:
             delivered[i] = c * CHUNK
 
     for i in range(STARTUP_CHUNKS, CHUNKS, PERIOD):
-        assert i in delivered, f"padding for chunk {i} missing"
+        if i not in delivered:
+            near = {j: c for j, c in delivered.items() if abs(j - i) <= 4 * PERIOD}
+            assert discarded_near(chunks, delivered, i), (
+                f"padding for chunk {i} missing, and no packet discarded; "
+                f"chunk => sample received nearby: {near}"
+            )
+            continue
         at = delivered[i]
         after = onsets[onsets >= at]
         assert len(after), "no onset after padding"
