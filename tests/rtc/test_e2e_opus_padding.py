@@ -129,13 +129,14 @@ async def test_opus_padding(red: bool) -> None:
         if track.kind == rtc.TrackKind.KIND_AUDIO:
             subscribed.put_nowait(track)
 
-    await subscriber.connect(url, create_token("subscriber", room_name))
+    options = rtc.RoomOptions(receive_opus_padding=True)
+    await subscriber.connect(url, create_token("subscriber", room_name), options)
     await publisher.connect(url, create_token("publisher", room_name))
     try:
         source = rtc.AudioSource(RATE, 1, queue_size_ms=100)
         track = rtc.LocalAudioTrack.create_audio_track("padded", source)
         options = rtc.TrackPublishOptions(
-            source=rtc.TrackSource.SOURCE_MICROPHONE, red=red, dtx=False
+            source=rtc.TrackSource.SOURCE_MICROPHONE, red=red, dtx=False, opus_padding=True
         )
         await publisher.local_participant.publish_track(track, options)
         sender = asyncio.create_task(send(source))

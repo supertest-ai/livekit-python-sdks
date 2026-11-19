@@ -39,7 +39,8 @@ class AudioFrameEvent:
         frame (AudioFrame): The received audio frame.
         opus_padding (Sequence[bytes]): The Opus padding of each received packet
             whose first sample falls in the frame, in order and byte for byte. A
-            tuple; empty on E2EE tracks.
+            tuple; empty unless the room was created with
+            `RoomOptions(receive_opus_padding=True)`.
     """
 
     frame: AudioFrame

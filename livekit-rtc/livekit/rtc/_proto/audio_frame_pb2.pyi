@@ -362,7 +362,8 @@ class CaptureAudioFrameRequest(google.protobuf.message.Message):
     request_async_id: builtins.int
     opus_padding: builtins.bytes
     """Written verbatim as the Opus padding of the encoded frame holding the
-    buffer's first sample.
+    buffer's first sample, if the track was published with opus_padding;
+    dropped while no sender carries it.
     """
     @property
     def buffer(self) -> global___AudioFrameBufferInfo: ...
@@ -954,7 +955,8 @@ class AudioFrameReceived(google.protobuf.message.Message):
     @property
     def opus_padding(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.bytes]:
         """The Opus padding of each received packet whose first sample is in the
-        frame, in order and byte for byte. Empty on E2EE tracks.
+        frame, in order and byte for byte. Empty unless the room was created
+        with receive_opus_padding.
         """
 
     def __init__(
